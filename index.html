@@ -488,16 +488,6 @@
         </div>
         
         <div class="main-content">
-            <!-- Status da Conexão (Automático) -->
-            <div class="section" style="display: none;">
-                <div class="connection-status">
-                    <div id="connectionStatus" class="status-indicator status-loading">
-                        🟡 Conectando...
-                    </div>
-                    <input type="hidden" id="scriptUrl" value="https://script.google.com/macros/s/AKfycbwzjx6mwXXpW-pUEEKHAAT84ELo2mJB_pgAWibyF8c8l_pE6e3ql_VgmvuH8KJrBgIThA/exec">
-                </div>
-            </div>
-
             <!-- Dashboard Cards -->
             <div class="dashboard">
                 <div class="card receita">
@@ -606,7 +596,7 @@
         // Configuração da aplicação
         let transactions = [];
         let isConnected = false;
-        let scriptUrl = '';
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbwzjx6mwXXpW-pUEEKHAAT84ELo2mJB_pgAWibyF8c8l_pE6e3ql_VgmvuH8KJrBgIThA/exec';
         let editingTransactionId = null;
         
         // Elementos do DOM
@@ -617,79 +607,35 @@
         const saldo = document.getElementById('saldo');
         const progressoMeta = document.getElementById('progressoMeta');
         const dateInput = document.getElementById('date');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const scriptUrlInput = document.getElementById('scriptUrl');
         
         // Definir data atual como padrão
         dateInput.valueAsDate = new Date();
         
-        // Carregar URL automaticamente
-        const scriptUrlInput = document.getElementById('scriptUrl');
-        scriptUrl = scriptUrlInput.value;
-        
         // Event Listeners
         form.addEventListener('submit', addTransaction);
         
-        // Conectar automaticamente ao carregar a página
-        setTimeout(() => {
-            if (scriptUrl) {
-                testConnection();
-            }
-        }, 1000);
-        
-        // Função para testar conexão
+        // Função para testar conexão silenciosamente
         async function testConnection() {
-            const url = scriptUrlInput.value.trim();
-            if (!url) {
-                showNotification('Por favor, insira a URL do Apps Script', 'error');
-                return;
-            }
-            
-            updateConnectionStatus('loading');
-            
             try {
-                const response = await fetch(url + '?action=getSummary');
+                const response = await fetch(scriptUrl + '?action=getSummary');
                 const result = await response.json();
                 
                 if (result.success) {
-                    scriptUrl = url;
-                    localStorage.setItem('scriptUrl', url);
                     isConnected = true;
-                    updateConnectionStatus('connected');
-                    showNotification('Conectado com sucesso!', 'success');
                     refreshData();
                 } else {
-                    throw new Error(result.error || 'Erro desconhecido');
+                    isConnected = false;
+                    loadLocalData();
                 }
             } catch (error) {
                 isConnected = false;
-                updateConnectionStatus('disconnected');
-                showNotification('Erro ao conectar: ' + error.message, 'error');
-            }
-        }
-        
-        // Atualizar status da conexão
-        function updateConnectionStatus(status) {
-            const statusElement = document.getElementById('connectionStatus');
-            
-            switch (status) {
-                case 'connected':
-                    statusElement.textContent = '🟢 Conectado';
-                    statusElement.className = 'status-indicator status-connected';
-                    break;
-                case 'loading':
-                    statusElement.textContent = '🟡 Conectando...';
-                    statusElement.className = 'status-indicator status-loading';
-                    break;
-                default:
-                    statusElement.textContent = '🔴 Desconectado';
-                    statusElement.className = 'status-indicator status-disconnected';
+                loadLocalData();
             }
         }
         
         // Atualizar dados da planilha
         async function refreshData() {
-            if (!isConnected || !scriptUrl) {
+            if (!isConnected) {
                 loadLocalData();
                 return;
             }
@@ -702,12 +648,10 @@
                     transactions = result.data || [];
                     saveLocalData();
                     updateDisplay();
-                    showNotification(`${transactions.length} transações carregadas`, 'success');
                 } else {
-                    throw new Error(result.error);
+                    loadLocalData();
                 }
             } catch (error) {
-                showNotification('Erro ao carregar dados: ' + error.message, 'error');
                 loadLocalData();
             }
         }
@@ -738,8 +682,8 @@
             form.reset();
             dateInput.valueAsDate = new Date();
             
-            // Sincronizar com planilha
-            if (isConnected && scriptUrl) {
+            // Sincronizar com planilha silenciosamente
+            if (isConnected) {
                 try {
                     const response = await fetch(scriptUrl, {
                         method: 'POST',
@@ -752,15 +696,15 @@
                     
                     const result = await response.json();
                     if (result.success) {
-                        showNotification('Transação adicionada e sincronizada!', 'success');
+                        showNotification('Transação adicionada com sucesso!', 'success');
                     } else {
-                        throw new Error(result.error);
+                        showNotification('Transação adicionada localmente', 'success');
                     }
                 } catch (error) {
-                    showNotification('Transação salva localmente, erro na sincronização', 'error');
+                    showNotification('Transação adicionada localmente', 'success');
                 }
             } else {
-                showNotification('Transação adicionada localmente', 'success');
+                showNotification('Transação adicionada!', 'success');
             }
             
             saveLocalData();
@@ -776,10 +720,10 @@
             transactions = transactions.filter(t => t.id !== id);
             updateDisplay();
             
-            // Sincronizar com planilha
-            if (isConnected && scriptUrl) {
+            // Sincronizar com planilha silenciosamente
+            if (isConnected) {
                 try {
-                    const response = await fetch(scriptUrl, {
+                    await fetch(scriptUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -787,20 +731,12 @@
                             id: id
                         })
                     });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        showNotification('Transação excluída e sincronizada!', 'success');
-                    } else {
-                        throw new Error(result.error);
-                    }
                 } catch (error) {
-                    showNotification('Transação removida localmente, erro na sincronização', 'error');
+                    // Falha silenciosa na sincronização
                 }
-            } else {
-                showNotification('Transação excluída localmente', 'success');
             }
             
+            showNotification('Transação excluída!', 'success');
             saveLocalData();
         }
         
@@ -845,10 +781,10 @@
                 updateDisplay();
             }
             
-            // Sincronizar com planilha
-            if (isConnected && scriptUrl) {
+            // Sincronizar com planilha silenciosamente
+            if (isConnected) {
                 try {
-                    const response = await fetch(scriptUrl, {
+                    await fetch(scriptUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -857,20 +793,12 @@
                             transaction: updatedTransaction
                         })
                     });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        showNotification('Transação atualizada e sincronizada!', 'success');
-                    } else {
-                        throw new Error(result.error);
-                    }
                 } catch (error) {
-                    showNotification('Transação atualizada localmente, erro na sincronização', 'error');
+                    // Falha silenciosa na sincronização
                 }
-            } else {
-                showNotification('Transação atualizada localmente', 'success');
             }
             
+            showNotification('Transação atualizada!', 'success');
             editingTransactionId = null;
             saveLocalData();
         }
@@ -890,30 +818,22 @@
             transactions = [];
             updateDisplay();
             
-            // Sincronizar com planilha
-            if (isConnected && scriptUrl) {
+            // Sincronizar com planilha silenciosamente
+            if (isConnected) {
                 try {
-                    const response = await fetch(scriptUrl, {
+                    await fetch(scriptUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             action: 'clearAllTransactions'
                         })
                     });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        showNotification('Todas as transações foram excluídas!', 'success');
-                    } else {
-                        throw new Error(result.error);
-                    }
                 } catch (error) {
-                    showNotification('Transações removidas localmente, erro na sincronização', 'error');
+                    // Falha silenciosa na sincronização
                 }
-            } else {
-                showNotification('Todas as transações foram excluídas!', 'success');
             }
             
+            showNotification('Todas as transações foram excluídas!', 'success');
             saveLocalData();
         }
         
@@ -1094,10 +1014,8 @@
         // Inicializar aplicação
         loadLocalData();
         
-        // Tentar conectar automaticamente se tiver URL salva
-        if (savedUrl) {
-            setTimeout(testConnection, 1000);
-        }
+        // Conectar automaticamente e silenciosamente
+        setTimeout(testConnection, 1000);
     </script>
 </body>
 </html>
