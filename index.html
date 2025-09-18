@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Gastos Pessoais</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px 30px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .card.receita { border-left-color: #10b981; }
+        .card.despesa { border-left-color: #ef4444; }
+        .card.saldo { border-left-color: #6366f1; }
+        .card.meta { border-left-color: #f59e0b; }
+
+        .card h3 {
+            color: #374151;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .card.receita .value { color: #10b981; }
+        .card.despesa .value { color: #ef4444; }
+        .card.saldo .value { color: #6366f1; }
+        .card.meta .value { color: #f59e0b; }
+
+        .card .subtitle {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #374151;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .form-container {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .status-indicator {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status-loading {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .transactions {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .transactions-header {
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .transactions-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.3s ease;
+        }
+
+        .transaction-item:hover {
+            background: #f8fafc;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-item.editing {
+            background: #fff7ed;
+            border: 2px solid #f59e0b;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-description {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .transaction-description input {
+            border: 1px solid #d1d5db;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            background: white;
+        }
+
+        .transaction-category {
+            font-size: 0.85rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .transaction-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0 15px;
+        }
+
+        .transaction-value input {
+            border: 1px solid #d1d5db;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            width: 100px;
+            text-align: right;
+        }
+
+        .transaction-value.receita {
+            color: #10b981;
+        }
+
+        .transaction-value.despesa {
+            color: #ef4444;
+        }
+
+        .transaction-date {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin: 0 10px;
+        }
+
+        .transaction-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .edit-btn {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .edit-btn:hover {
+            background: #d97706;
+        }
+
+        .save-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .cancel-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #6366f1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            background: #10b981;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .form-group {
+                min-width: 100%;
+            }
+            
+            .transaction-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .transaction-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Controle de Gastos</h1>
+            <p>Sincronizado com Google Sheets em tempo real</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- Status da Conexão -->
+            <div class="section">
+                <div class="connection-status">
+                    <div id="connectionStatus" class="status-indicator status-disconnected">
+                        🔴 Desconectado
+                    </div>
+                    <div class="form-group" style="flex: 1; margin: 0;">
+                        <input type="text" id="scriptUrl" placeholder="Cole aqui a URL do seu Google Apps Script" 
+                               value="" style="margin-bottom: 0;">
+                    </div>
+                    <button onclick="testConnection()" class="btn btn-primary">Conectar</button>
+                    <button onclick="refreshData()" class="btn btn-success">🔄 Atualizar</button>
+                </div>
+                
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; font-size: 0.9rem;">
+                    <h4 style="color: #0369a1; margin-bottom: 10px;">📋 Como Conectar:</h4>
+                    <ol style="margin-left: 20px; color: #075985;">
+                        <li>Copie o código do Apps Script fornecido</li>
+                        <li>Cole no Google Apps Script da sua planilha</li>
+                        <li>Implante como "Web app"</li>
+                        <li>Cole a URL aqui e clique "Conectar"</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Dashboard Cards -->
+            <div class="dashboard">
+                <div class="card receita">
+                    <h3>Receitas</h3>
+                    <div class="value" id="totalReceitas">R$ 0,00</div>
+                    <div class="subtitle">Total recebido</div>
+                </div>
+                
+                <div class="card despesa">
+                    <h3>Despesas</h3>
+                    <div class="value" id="totalDespesas">R$ 0,00</div>
+                    <div class="subtitle">Total gasto</div>
+                </div>
+                
+                <div class="card saldo">
+                    <h3>Saldo</h3>
+                    <div class="value" id="saldo">R$ 0,00</div>
+                    <div class="subtitle">Receitas - Despesas</div>
+                </div>
+                
+                <div class="card meta">
+                    <h3>Meta do Mês</h3>
+                    <div class="value" id="progressoMeta">0%</div>
+                    <div class="subtitle">Objetivo: R$ 1.000,00</div>
+                </div>
+            </div>
+            
+            <!-- Formulário -->
+            <div class="section">
+                <h2 class="section-title">Nova Transação</h2>
+                <div class="form-container">
+                    <form id="transactionForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="description">Descrição</label>
+                                <input type="text" id="description" placeholder="Ex: Salário, Supermercado..." required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="amount">Valor</label>
+                                <input type="number" id="amount" placeholder="0,00" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="type">Tipo</label>
+                                <select id="type" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="receita">Receita</option>
+                                    <option value="despesa">Despesa</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="category">Categoria</label>
+                                <select id="category" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="salario">Salário</option>
+                                    <option value="freelance">Freelance</option>
+                                    <option value="alimentacao">Alimentação</option>
+                                    <option value="transporte">Transporte</option>
+                                    <option value="moradia">Moradia</option>
+                                    <option value="saude">Saúde</option>
+                                    <option value="educacao">Educação</option>
+                                    <option value="lazer">Lazer</option>
+                                    <option value="compras">Compras</option>
+                                    <option value="outros">Outros</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="date">Data</label>
+                                <input type="date" id="date" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Adicionar Transação</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Lista de Transações -->
+            <div class="section">
+                <h2 class="section-title">Histórico de Transações</h2>
+                <div class="transactions">
+                    <div class="transactions-header">
+                        <h3>Suas Transações</h3>
+                        <button onclick="clearAllTransactions()" class="btn btn-danger btn-small">🗑️ Limpar Tudo</button>
+                    </div>
+                    <div class="transactions-list" id="transactionsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Carregando transações...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da aplicação
+        let transactions = [];
+        let isConnected = false;
+        let scriptUrl = '';
+        let editingTransactionId = null;
+        
+        // Elementos do DOM
+        const form = document.getElementById('transactionForm');
+        const transactionsList = document.getElementById('transactionsList');
+        const totalReceitas = document.getElementById('totalReceitas');
+        const totalDespesas = document.getElementById('totalDespesas');
+        const saldo = document.getElementById('saldo');
+        const progressoMeta = document.getElementById('progressoMeta');
+        const dateInput = document.getElementById('date');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const scriptUrlInput = document.getElementById('scriptUrl');
+        
+        // Definir data atual como padrão
+        dateInput.valueAsDate = new Date();
+        
+        // Event Listeners
+        form.addEventListener('submit', addTransaction);
+        
+        // Carregar URL salva
+        const savedUrl = localStorage.getItem('scriptUrl');
+        if (savedUrl) {
+            scriptUrlInput.value = savedUrl;
+            scriptUrl = savedUrl;
+            testConnection();
+        }
+        
+        // Função para testar conexão
+        async function testConnection() {
+            const url = scriptUrlInput.value.trim();
+            if (!url) {
+                showNotification('Por favor, insira a URL do Apps Script', 'error');
+                return;
+            }
+            
+            updateConnectionStatus('loading');
+            
+            try {
+                const response = await fetch(url + '?action=getSummary');
+                const result = await response.json();
+                
+                if (result.success) {
+                    scriptUrl = url;
+                    localStorage.setItem('scriptUrl', url);
+                    isConnected = true;
+                    updateConnectionStatus('connected');
+                    showNotification('Conectado com sucesso!', 'success');
+                    refreshData();
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+            } catch (error) {
+                isConnected = false;
+                updateConnectionStatus('disconnected');
+                showNotification('Erro ao conectar: ' + error.message, 'error');
+            }
+        }
+        
+        // Atualizar status da conexão
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            
+            switch (status) {
+                case 'connected':
+                    statusElement.textContent = '🟢 Conectado';
+                    statusElement.className = 'status-indicator status-connected';
+                    break;
+                case 'loading':
+                    statusElement.textContent = '🟡 Conectando...';
+                    statusElement.className = 'status-indicator status-loading';
+                    break;
+                default:
+                    statusElement.textContent = '🔴 Desconectado';
+                    statusElement.className = 'status-indicator status-disconnected';
+            }
+        }
+        
+        // Atualizar dados da planilha
+        async function refreshData() {
+            if (!isConnected || !scriptUrl) {
+                loadLocalData();
+                return;
+            }
+            
+            try {
+                const response = await fetch(scriptUrl + '?action=getAllTransactions');
+                const result = await response.json();
+                
+                if (result.success) {
+                    transactions = result.data || [];
+                    saveLocalData();
+                    updateDisplay();
+                    showNotification(`${transactions.length} transações carregadas`, 'success');
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showNotification('Erro ao carregar dados: ' + error.message, 'error');
+                loadLocalData();
+            }
+        }
+        
+        // Adicionar nova transação
+        async function addTransaction(e) {
+            e.preventDefault();
+            
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
+            
+            const transaction = {
+                id: Date.now(),
+                description,
+                amount,
+                type,
+                category,
+                date,
+                createdAt: new Date().toISOString()
+            };
+            
+            // Adicionar localmente primeiro
+            transactions.push(transaction);
+            updateDisplay();
+            form.reset();
+            dateInput.valueAsDate = new Date();
+            
+            // Sincronizar com planilha
+            if (isConnected && scriptUrl) {
+                try {
+                    const response = await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'addTransaction',
+                            transaction: transaction
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('Transação adicionada e sincronizada!', 'success');
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    showNotification('Transação salva localmente, erro na sincronização', 'error');
+                }
+            } else {
+                showNotification('Transação adicionada localmente', 'success');
+            }
+            
+            saveLocalData();
+        }
+        
+        // Deletar transação
+        async function deleteTransaction(id) {
+            if (!confirm('Tem certeza que deseja excluir esta transação?')) {
+                return;
+            }
+            
+            // Remover localmente primeiro
+            transactions = transactions.filter(t => t.id !== id);
+            updateDisplay();
+            
+            // Sincronizar com planilha
+            if (isConnected && scriptUrl) {
+                try {
+                    const response = await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'deleteTransaction',
+                            id: id
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('Transação excluída e sincronizada!', 'success');
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    showNotification('Transação removida localmente, erro na sincronização', 'error');
+                }
+            } else {
+                showNotification('Transação excluída localmente', 'success');
+            }
+            
+            saveLocalData();
+        }
+        
+        // Editar transação
+        function editTransaction(id) {
+            if (editingTransactionId === id) {
+                cancelEdit();
+                return;
+            }
+            
+            // Cancelar edição anterior se existir
+            if (editingTransactionId) {
+                cancelEdit();
+            }
+            
+            editingTransactionId = id;
+            displayTransactions();
+        }
+        
+        // Salvar edição
+        async function saveEdit(id) {
+            const transactionElement = document.querySelector(`[data-transaction-id="${id}"]`);
+            const descriptionInput = transactionElement.querySelector('.edit-description');
+            const amountInput = transactionElement.querySelector('.edit-amount');
+            const typeSelect = transactionElement.querySelector('.edit-type');
+            const categorySelect = transactionElement.querySelector('.edit-category');
+            const dateInput = transactionElement.querySelector('.edit-date');
+            
+            const updatedTransaction = {
+                id: id,
+                description: descriptionInput.value,
+                amount: parseFloat(amountInput.value),
+                type: typeSelect.value,
+                category: categorySelect.value,
+                date: dateInput.value
+            };
+            
+            // Atualizar localmente
+            const index = transactions.findIndex(t => t.id === id);
+            if (index !== -1) {
+                transactions[index] = { ...transactions[index], ...updatedTransaction };
+                updateDisplay();
+            }
+            
+            // Sincronizar com planilha
+            if (isConnected && scriptUrl) {
+                try {
+                    const response = await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'updateTransaction',
+                            id: id,
+                            transaction: updatedTransaction
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('Transação atualizada e sincronizada!', 'success');
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    showNotification('Transação atualizada localmente, erro na sincronização', 'error');
+                }
+            } else {
+                showNotification('Transação atualizada localmente', 'success');
+            }
+            
+            editingTransactionId = null;
+            saveLocalData();
+        }
+        
+        // Cancelar edição
+        function cancelEdit() {
+            editingTransactionId = null;
+            displayTransactions();
+        }
+        
+        // Limpar todas as transações
+        async function clearAllTransactions() {
+            if (!confirm('Tem certeza que deseja excluir TODAS as transações? Esta ação não pode ser desfeita!')) {
+                return;
+            }
+            
+            transactions = [];
+            updateDisplay();
+            
+            // Sincronizar com planilha
+            if (isConnected && scriptUrl) {
+                try {
+                    const response = await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'clearAllTransactions'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('Todas as transações foram excluídas!', 'success');
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    showNotification('Transações removidas localmente, erro na sincronização', 'error');
+                }
+            } else {
+                showNotification('Todas as transações foram excluídas!', 'success');
+            }
+            
+            saveLocalData();
+        }
+        
+        // Atualizar display
+        function updateDisplay() {
+            updateSummary();
+            displayTransactions();
+        }
+        
+        // Atualizar resumo
+        function updateSummary() {
+            const receitas = transactions
+                .filter(t => t.type === 'receita')
+                .reduce((acc, t) => acc + t.amount, 0);
+                
+            const despesas = transactions
+                .filter(t => t.type === 'despesa')
+                .reduce((acc, t) => acc + t.amount, 0);
+                
+            const saldoValue = receitas - despesas;
+            const meta = 1000;
+            const progresso = receitas > 0 ? Math.min((receitas / meta) * 100, 100) : 0;
+            
+            totalReceitas.textContent = formatCurrency(receitas);
+            totalDespesas.textContent = formatCurrency(despesas);
+            saldo.textContent = formatCurrency(saldoValue);
+            progressoMeta.textContent = `${progresso.toFixed(1)}%`;
+            
+            // Atualizar cor do saldo
+            const saldoElement = document.getElementById('saldo');
+            saldoElement.className = 'value';
+            if (saldoValue > 0) {
+                saldoElement.style.color = '#10b981';
+            } else if (saldoValue < 0) {
+                saldoElement.style.color = '#ef4444';
+            } else {
+                saldoElement.style.color = '#6366f1';
+            }
+        }
+        
+        // Exibir transações
+        function displayTransactions() {
+            const sortedTransactions = transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (sortedTransactions.length === 0) {
+                transactionsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhuma transação encontrada</p>
+                        <small>Adicione sua primeira transação usando o formulário acima</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            transactionsList.innerHTML = sortedTransactions
+                .map(transaction => {
+                    const isEditing = editingTransactionId === transaction.id;
+                    
+                    if (isEditing) {
+                        return `
+                            <div class="transaction-item editing" data-transaction-id="${transaction.id}">
+                                <div class="transaction-info">
+                                    <div class="transaction-description">
+                                        <input type="text" class="edit-description" value="${transaction.description}">
+                                    </div>
+                                    <select class="edit-category">
+                                        <option value="salario" ${transaction.category === 'salario' ? 'selected' : ''}>Salário</option>
+                                        <option value="freelance" ${transaction.category === 'freelance' ? 'selected' : ''}>Freelance</option>
+                                        <option value="alimentacao" ${transaction.category === 'alimentacao' ? 'selected' : ''}>Alimentação</option>
+                                        <option value="transporte" ${transaction.category === 'transporte' ? 'selected' : ''}>Transporte</option>
+                                        <option value="moradia" ${transaction.category === 'moradia' ? 'selected' : ''}>Moradia</option>
+                                        <option value="saude" ${transaction.category === 'saude' ? 'selected' : ''}>Saúde</option>
+                                        <option value="educacao" ${transaction.category === 'educacao' ? 'selected' : ''}>Educação</option>
+                                        <option value="lazer" ${transaction.category === 'lazer' ? 'selected' : ''}>Lazer</option>
+                                        <option value="compras" ${transaction.category === 'compras' ? 'selected' : ''}>Compras</option>
+                                        <option value="outros" ${transaction.category === 'outros' ? 'selected' : ''}>Outros</option>
+                                    </select>
+                                </div>
+                                <div class="transaction-value ${transaction.type}">
+                                    <select class="edit-type" style="width: 80px; margin-right: 5px;">
+                                        <option value="receita" ${transaction.type === 'receita' ? 'selected' : ''}>+</option>
+                                        <option value="despesa" ${transaction.type === 'despesa' ? 'selected' : ''}>-</option>
+                                    </select>
+                                    <input type="number" class="edit-amount" value="${transaction.amount}" step="0.01">
+                                </div>
+                                <div class="transaction-date">
+                                    <input type="date" class="edit-date" value="${transaction.date}">
+                                </div>
+                                <div class="transaction-actions">
+                                    <button class="save-btn" onclick="saveEdit(${transaction.id})">💾</button>
+                                    <button class="cancel-btn" onclick="cancelEdit()">❌</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    return `
+                        <div class="transaction-item" data-transaction-id="${transaction.id}">
+                            <div class="transaction-info">
+                                <div class="transaction-description">${transaction.description}</div>
+                                <span class="transaction-category">${getCategoryName(transaction.category)}</span>
+                            </div>
+                            <div class="transaction-value ${transaction.type}">
+                                ${transaction.type === 'receita' ? '+' : '-'} ${formatCurrency(transaction.amount)}
+                            </div>
+                            <div class="transaction-date">${formatDate(transaction.date)}</div>
+                            <div class="transaction-actions">
+                                <button class="edit-btn" onclick="editTransaction(${transaction.id})">✏️</button>
+                                <button class="delete-btn" onclick="deleteTransaction(${transaction.id})">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+        
+        // Salvar dados localmente
+        function saveLocalData() {
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+        
+        // Carregar dados localmente
+        function loadLocalData() {
+            const savedTransactions = localStorage.getItem('transactions');
+            if (savedTransactions) {
+                transactions = JSON.parse(savedTransactions);
+                updateDisplay();
+            }
+        }
+        
+        // Formatação
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(amount);
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR');
+        }
+        
+        function getCategoryName(category) {
+            const categories = {
+                'salario': 'Salário',
+                'freelance': 'Freelance',
+                'alimentacao': 'Alimentação',
+                'transporte': 'Transporte',
+                'moradia': 'Moradia',
+                'saude': 'Saúde',
+                'educacao': 'Educação',
+                'lazer': 'Lazer',
+                'compras': 'Compras',
+                'outros': 'Outros'
+            };
+            return categories[category] || category;
+        }
+        
+        // Notificações
+        function showNotification(message, type) {
+            // Remove notificação anterior se existir
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+        
+        // Inicializar aplicação
+        loadLocalData();
+        
+        // Tentar conectar automaticamente se tiver URL salva
+        if (savedUrl) {
+            setTimeout(testConnection, 1000);
+        }
+    </script>
+</body>
+</html>
