@@ -484,32 +484,17 @@
     <div class="container">
         <div class="header">
             <h1>💰 Controle de Gastos</h1>
-            <p>Sincronizado com Google Sheets em tempo real</p>
+            <p>Gerencie suas finanças de forma inteligente</p>
         </div>
         
         <div class="main-content">
-            <!-- Status da Conexão -->
-            <div class="section">
+            <!-- Status da Conexão (Automático) -->
+            <div class="section" style="display: none;">
                 <div class="connection-status">
-                    <div id="connectionStatus" class="status-indicator status-disconnected">
-                        🔴 Desconectado
+                    <div id="connectionStatus" class="status-indicator status-loading">
+                        🟡 Conectando...
                     </div>
-                    <div class="form-group" style="flex: 1; margin: 0;">
-                        <input type="text" id="scriptUrl" placeholder="Cole aqui a URL do seu Google Apps Script" 
-                               value="https://script.google.com/macros/s/AKfycbwzjx6mwXXpW-pUEEKHAAT84ELo2mJB_pgAWibyF8c8l_pE6e3ql_VgmvuH8KJrBgIThA/exec" style="margin-bottom: 0;">
-                    </div>
-                    <button onclick="testConnection()" class="btn btn-primary">Conectar</button>
-                    <button onclick="refreshData()" class="btn btn-success">🔄 Atualizar</button>
-                </div>
-                
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; font-size: 0.9rem;">
-                    <h4 style="color: #0369a1; margin-bottom: 10px;">📋 Como Conectar:</h4>
-                    <ol style="margin-left: 20px; color: #075985;">
-                        <li>Copie o código do Apps Script fornecido</li>
-                        <li>Cole no Google Apps Script da sua planilha</li>
-                        <li>Implante como "Web app"</li>
-                        <li>Cole a URL aqui e clique "Conectar"</li>
-                    </ol>
+                    <input type="hidden" id="scriptUrl" value="https://script.google.com/macros/s/AKfycbwzjx6mwXXpW-pUEEKHAAT84ELo2mJB_pgAWibyF8c8l_pE6e3ql_VgmvuH8KJrBgIThA/exec">
                 </div>
             </div>
 
@@ -601,7 +586,10 @@
                 <div class="transactions">
                     <div class="transactions-header">
                         <h3>Suas Transações</h3>
-                        <button onclick="clearAllTransactions()" class="btn btn-danger btn-small">🗑️ Limpar Tudo</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="refreshData()" class="btn btn-success btn-small">🔄 Atualizar</button>
+                            <button onclick="clearAllTransactions()" class="btn btn-danger btn-small">🗑️ Limpar Tudo</button>
+                        </div>
                     </div>
                     <div class="transactions-list" id="transactionsList">
                         <div class="loading">
@@ -635,16 +623,19 @@
         // Definir data atual como padrão
         dateInput.valueAsDate = new Date();
         
+        // Carregar URL automaticamente
+        const scriptUrlInput = document.getElementById('scriptUrl');
+        scriptUrl = scriptUrlInput.value;
+        
         // Event Listeners
         form.addEventListener('submit', addTransaction);
         
-        // Carregar URL salva
-        const savedUrl = localStorage.getItem('scriptUrl');
-        if (savedUrl) {
-            scriptUrlInput.value = savedUrl;
-            scriptUrl = savedUrl;
-            testConnection();
-        }
+        // Conectar automaticamente ao carregar a página
+        setTimeout(() => {
+            if (scriptUrl) {
+                testConnection();
+            }
+        }, 1000);
         
         // Função para testar conexão
         async function testConnection() {
