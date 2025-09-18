@@ -240,6 +240,12 @@
             padding: 40px 20px;
             color: #6b7280;
         }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body>
@@ -326,7 +332,7 @@
                     <button onclick="refreshData()" class="btn btn-small">🔄 Atualizar</button>
                 </div>
                 <div class="transactions-list" id="transactionsList">
-                    <div class="empty-state">
+                    <div class="loading">
                         <p>Carregando...</p>
                     </div>
                 </div>
@@ -335,7 +341,7 @@
     </div>
 
     <script>
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycby-vgN7zaFy6SG524sxZ4q0dja8AinjGDLJMOCdUZ5E6v1cTOS4kxovuv5pOMRzQgfH/exec';
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyhqYzawRCYFTZOK42JHrouFNO3MTBbjNXBAT7HFOo7LUOysbW-bsmd3cwLvTBJcGn8sw/exec';
         let transactions = [];
         
         const form = document.getElementById('transactionForm');
@@ -348,9 +354,11 @@
         // Event listener
         form.addEventListener('submit', addTransaction);
         
-        // Carregar dados
+        // Carregar dados usando GET (como cashback)
         async function refreshData() {
             try {
+                showNotification('Carregando dados...', 'success');
+                
                 const response = await fetch(scriptUrl + '?action=getAllTransactions');
                 const result = await response.json();
                 
@@ -362,70 +370,75 @@
                     showNotification('Erro ao carregar dados', 'error');
                 }
             } catch (error) {
+                console.error('Erro:', error);
                 showNotification('Erro de conexão', 'error');
             }
         }
         
-        // Adicionar transação
+        // Adicionar transação usando GET (como cashback)
         async function addTransaction(e) {
             e.preventDefault();
             
-            const transactionData = {
-                description: document.getElementById('description').value,
-                amount: parseFloat(document.getElementById('amount').value),
-                type: document.getElementById('type').value,
-                category: document.getElementById('category').value,
-                date: document.getElementById('date').value
-            };
+            const description = document.getElementById('description').value;
+            const amount = document.getElementById('amount').value;
+            const type = document.getElementById('type').value;
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
             
             try {
-                const response = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'addTransaction',
-                        transaction: transactionData
-                    })
+                showNotification('Adicionando transação...', 'success');
+                
+                const params = new URLSearchParams({
+                    action: 'addTransaction',
+                    description: description,
+                    amount: amount,
+                    type: type,
+                    category: category,
+                    date: date
                 });
                 
+                const response = await fetch(scriptUrl + '?' + params.toString());
                 const result = await response.json();
                 
                 if (result.success) {
                     showNotification('Transação adicionada!', 'success');
                     form.reset();
                     dateInput.valueAsDate = new Date();
-                    refreshData();
+                    // Aguardar um pouco e recarregar os dados
+                    setTimeout(refreshData, 1000);
                 } else {
                     showNotification('Erro: ' + result.error, 'error');
                 }
             } catch (error) {
+                console.error('Erro:', error);
                 showNotification('Erro de conexão', 'error');
             }
         }
         
-        // Deletar transação
+        // Deletar transação usando GET (como cashback)
         async function deleteTransaction(id) {
             if (!confirm('Excluir esta transação?')) return;
             
             try {
-                const response = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'deleteTransaction',
-                        id: id
-                    })
+                showNotification('Excluindo transação...', 'success');
+                
+                const params = new URLSearchParams({
+                    action: 'deleteTransaction',
+                    id: id
                 });
                 
+                const response = await fetch(scriptUrl + '?' + params.toString());
                 const result = await response.json();
                 
                 if (result.success) {
                     showNotification('Transação excluída!', 'success');
-                    refreshData();
+                    // Aguardar um pouco e recarregar os dados
+                    setTimeout(refreshData, 1000);
                 } else {
                     showNotification('Erro ao excluir', 'error');
                 }
             } catch (error) {
+                console.error('Erro:', error);
                 showNotification('Erro de conexão', 'error');
             }
         }
